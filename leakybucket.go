@@ -50,7 +50,8 @@ func HandleRequest(w http.ResponseWriter, r *http.Request) {
 
 	const limitPerMinute = 120
 
-	info := counter.Add(remoteHost, limitPerMinute, 1)
+	currentTime := time.Now()
+	info := counter.Add(remoteHost, limitPerMinute, 1, currentTime)
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -94,29 +95,27 @@ func NewCounter() *Counter {
 // "key", based on the given limit per window. It returns Info about the bucket
 // state, and true/false to indicate whether the value was successfully added to
 // the bucket. If the limit is zero, it always returns success.
-func (p *Counter) Add(key string, limitPerWindow int64, add int64) Info {
+func (p *Counter) Add(key string, limitPerWindow int64, add int64, currentTime time.Time) Info {
 	if limitPerWindow == 0 {
 		return Info{
 			Bucket:  key,
-			ResetAt: time.Now(),
+			ResetAt: currentTime,
 			Allowed: true,
 		}
 	}
 
-	now := time.Now()
-
 	existingBucket := p.buckets[key]
 
-	newBucket := existingBucket.Plus(now, limitPerWindow, add)
+	newBucket := existingBucket.Plus(currentTime, limitPerWindow, add)
 
-	newCount := newBucket.CountAt(now)
+	newCount := newBucket.CountAt(currentTime)
 	bucketSize := BucketSize(limitPerWindow)
 	if newCount > bucketSize {
 		return Info{
 			Bucket:     key,
-			ResetAt:    existingBucket.WillReach(bucketSize-add, now),
+			ResetAt:    existingBucket.WillReach(bucketSize-add, currentTime),
 			BucketSize: bucketSize,
-			Remaining:  max(0, bucketSize-existingBucket.CountAt(now)),
+			Remaining:  max(0, bucketSize-existingBucket.CountAt(currentTime)),
 			Allowed:    false,
 		}
 	}
@@ -126,7 +125,7 @@ func (p *Counter) Add(key string, limitPerWindow int64, add int64) Info {
 	remaining := bucketSize - newCount
 	return Info{
 		Bucket:     key,
-		ResetAt:    newBucket.WillReach(bucketSize-1, now),
+		ResetAt:    newBucket.WillReach(bucketSize-1, currentTime),
 		BucketSize: bucketSize,
 		Remaining:  remaining,
 		Allowed:    true,
