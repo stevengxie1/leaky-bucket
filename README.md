@@ -17,4 +17,5 @@ The Makefile contains commands to test, build, and deploy
 - Tests need to be more comprehensive, include coverage reports
 - Dockerfile could use more oomph: multistage build, pick a small, minimal runtime container
 - Use Taskfile instead of Makefile
-
+- Codeowners
+- Main vs branch builds, tag releases, semantic commits
