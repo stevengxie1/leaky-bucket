@@ -34,5 +34,6 @@ jobs:
     
     - name: Build the Docker image, push
       run: |
-        docker build -t ${{ secrets.ECR_REPOSITORY }}:latest .
-        docker push ${{ secrets.ECR_REPOSITORY }}:latest
+        TAG="v1.0.${{ github.run_number }}"
+        docker build -t ${{ secrets.ECR_REPOSITORY }}:$TAG .
+        docker push ${{ secrets.ECR_REPOSITORY }}:$TAG
